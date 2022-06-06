@@ -9,7 +9,7 @@ Has all the features of mini text editor.
 - Syntax highlighting
 - Searching
 
-What's more? There is better syntax highlighting than mini text editor. with an editable config file where you can change your color scheme, tab stop, and more.
+What's more? There is better syntax highlighting than mini text editor. with an editable config file where you can change your color scheme (coming soon), tab stop, and more.
 
 You can also add more syntax highlighting languages that come preinstalled with Cookie, but you can also add your own.
 
