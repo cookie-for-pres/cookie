@@ -33,4 +33,4 @@ cookie <filename>
 
 ## License
 
-Cookie editor is released under MIT license. See [LICENSE](https://github.com/cookie-for-res/cookie/LICENSE).
+Cookie editor is released under MIT license. See [LICENSE](https://github.com/cookie-for-pres/cookie/blob/main/LICENSE).
