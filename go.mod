@@ -1,4 +1,4 @@
-module cookie-for-pres/cookie
+module github.com/cookie-for-pres/cookie
 
 go 1.18
 

@@ -17,7 +17,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var version = "0.1.1"
+var version = "0.1.2"
 
 var (
 	stdinfd  = int(os.Stdin.Fd())
