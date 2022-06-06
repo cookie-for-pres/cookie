@@ -5,6 +5,9 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"time"
+
+	"github.com/olekukonko/ts"
 )
 
 const CONFIG_FILE = ".config/cookie/config.json"
@@ -108,7 +111,18 @@ func main() {
 		}
 	}
 
-	editor.SetStatusMessage("Help: Ctrl-S = Save | Ctrl-Q = Quit | Ctrl-F = Find")
+	editor.SetStatusMessage("Help: Ctrl-S = Save | Ctrl-Q = Quit | Ctrl-F = Find | Ctrl-D = Delete Line")
+
+	go func() {
+		for {
+			size, _ := ts.GetSize()
+			editor.ScreenCols = size.Col()
+			editor.ScreenRows = size.Row() - 2
+
+			editor.Render()
+			time.Sleep(time.Millisecond * 100)
+		}
+	}()
 
 	for {
 		editor.Render()

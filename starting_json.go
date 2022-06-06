@@ -82,6 +82,7 @@ const startingSyntaxJson = `[
             "byte", "else", "import", "public", "throws", "case", "enum",
             "instanceof", "return", "transient", "catch", "extends", "int",
             "short", "try", "char", "final", "interface", "static", "void",
+            "class",
             
             "int|", "long|", "double|", "float|", "char|", "unsigned|",
             "signed|", "void|"
@@ -105,7 +106,7 @@ const startingSyntaxJson = `[
             "in", "instanceof", "interface", "let", "new", "null", "package",
             "private", "protected", "public", "return", "static", "super",
             "switch", "this", "throw", "true", "try", "typeof", "var", "void",
-            "while", "with", "yield",
+            "while", "with", "yield", "function",
 
             "int|", "long|", "double|", "float|", "char|", "unsigned|",
             "signed|", "void|"
@@ -129,7 +130,7 @@ const startingSyntaxJson = `[
             "in", "instanceof", "interface", "let", "new", "null", "package",
             "private", "protected", "public", "return", "static", "super",
             "switch", "this", "throw", "true", "try", "typeof", "var", "void",
-            "while", "with", "yield",
+            "while", "with", "yield", "fn", "extern", "impl", "let", "loop",
 
             "int|", "long|", "double|", "float|", "char|", "unsigned|",
             "signed|", "void|"

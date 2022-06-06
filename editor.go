@@ -17,7 +17,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var version = "0.1.0"
+var version = "0.1.1"
 
 var (
 	stdinfd  = int(os.Stdin.Fd())
@@ -275,6 +275,17 @@ func (e *Editor) ProcessKey() error {
 			}
 		}
 
+	case key(ctrl('d')):
+		if e.CY < len(e.Rows) {
+			e.Rows = append(e.Rows[:e.CY], e.Rows[e.CY+1:]...)
+		}
+		e.CX = 0
+
+		if e.CY > 0 {
+			e.CY--
+			e.CX = len(e.Rows[e.CY].chars)
+		}
+
 	case keyHome:
 		e.CX = 0
 
@@ -290,6 +301,7 @@ func (e *Editor) ProcessKey() error {
 		if e.CY == len(e.Rows)-1 && e.CX == len(e.Rows[e.CY].chars) {
 			break
 		}
+
 		e.MoveCursor(keyArrowRight)
 		e.DeleteChar()
 
@@ -766,7 +778,7 @@ func (e *Editor) UpdateHighlight(row *Row) {
 				prevSep = true
 				continue
 			} else {
-				if r == '"' || r == '\'' {
+				if r == '"' || r == '\'' || r == '`' {
 					strQuote = r
 					row.hl[idx] = hlString
 					idx++
@@ -786,7 +798,7 @@ func (e *Editor) UpdateHighlight(row *Row) {
 		}
 
 		if e.Syntax.Flags.HighLightBooleans {
-			if r == 't' && idx+3 < len(runes) && strings.ToLower(string(runes[idx:idx+4])) == "true" {
+			if (r == 't' || r == 'T') && idx+3 < len(runes) && strings.ToLower(string(runes[idx:idx+4])) == "true" {
 				if !(idx+4 < len(runes) && !IsSeparator(runes[idx+4])) {
 					for i := 0; i < 4; i++ {
 						row.hl[idx] = hlBoolean
@@ -798,7 +810,7 @@ func (e *Editor) UpdateHighlight(row *Row) {
 				}
 			}
 
-			if r == 'f' && idx+4 < len(runes) && strings.ToLower(string(runes[idx:idx+5])) == "false" {
+			if (r == 'f' || r == 'F') && idx+4 < len(runes) && strings.ToLower(string(runes[idx:idx+5])) == "false" {
 				if !(idx+5 < len(runes) && !IsSeparator(runes[idx+5])) {
 					for i := 0; i < 5; i++ {
 						row.hl[idx] = hlBoolean
