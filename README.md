@@ -31,6 +31,15 @@ go get github.com/cookie-for-pres/cookie
 cookie <filename>
 ```
 
+## Key bindings
+
+```txt
+Ctrl-Q: quit
+Ctrl-S: save
+Ctrl-F: find
+Ctrl-D: delete line
+```
+
 ## License
 
 Cookie editor is released under MIT license. See [LICENSE](https://github.com/cookie-for-pres/cookie/blob/main/LICENSE).

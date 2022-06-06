@@ -419,7 +419,7 @@ func (e *Editor) DrawStatusBar(b *strings.Builder) {
 	if e.Dirty > 0 {
 		dirtyStatus = "(modified)"
 	}
-	lmsg := fmt.Sprintf("%.20s - %d lines %s", filename, len(e.Rows), dirtyStatus)
+	lmsg := fmt.Sprintf("%.35s - %d lines %s", filename, len(e.Rows), dirtyStatus)
 	if runewidth.StringWidth(lmsg) > e.ScreenCols {
 		lmsg = runewidth.Truncate(lmsg, e.ScreenCols, "...")
 	}
