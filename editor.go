@@ -14,17 +14,11 @@ import (
 	"unicode/utf8"
 
 	"github.com/mattn/go-runewidth"
+	"golang.design/x/clipboard"
 	"golang.org/x/sys/unix"
 )
 
-var version = "0.1.3"
-
-var (
-	stdinfd  = int(os.Stdin.Fd())
-	stdoutfd = int(os.Stdout.Fd())
-)
-
-var ErrQuitEditor = errors.New("quit editor")
+type key int32
 
 type Editor struct {
 	CX, CY            int
@@ -44,6 +38,76 @@ type Editor struct {
 	Config            *Config
 	Syntaxes          []*EditorSyntax
 }
+
+type ColorPalette struct {
+	Normal           uint8 `json:"normal"`
+	Comment          uint8 `json:"comment"`
+	MultiLineComment uint8 `json:"multiline_comment"`
+	Keyword1         uint8 `json:"keyword1"`
+	Keyword2         uint8 `json:"keyword2"`
+	String           uint8 `json:"string"`
+	Number           uint8 `json:"number"`
+	Boolean          uint8 `json:"boolean"`
+	Match            uint8 `json:"match"`
+}
+
+type EditorSyntax struct {
+	FileType  string   `json:"filetype"`
+	FileMatch []string `json:"filematch"`
+	Keywords  []string `json:"keywords"`
+	SCS       string   `json:"scs"`
+	MCS       string   `json:"mcs"`
+	MCE       string   `json:"mce"`
+	Flags     struct {
+		HighLightNumbers  bool `json:"highlight_numbers"`
+		HighLightStrings  bool `json:"highlight_strings"`
+		HighLightBooleans bool `json:"highlight_booleans"`
+	} `json:"flags"`
+}
+
+type Row struct {
+	idx                int
+	chars              []rune
+	render             string
+	hl                 []uint8
+	hasUnclosedComment bool
+}
+
+var version = "0.1.3"
+
+var (
+	stdinfd  = int(os.Stdin.Fd())
+	stdoutfd = int(os.Stdout.Fd())
+)
+
+var ErrQuitEditor = errors.New("quit editor")
+
+const (
+	keyEnter     key = 10
+	keyBackspace key = 127
+
+	keyArrowLeft key = iota + 1000
+	keyArrowRight
+	keyArrowUp
+	keyArrowDown
+	keyDelete
+	keyPageUp
+	keyPageDown
+	keyHome
+	keyEnd
+)
+
+const (
+	hlNormal uint8 = iota
+	hlComment
+	hlMlComment
+	hlKeyword1
+	hlKeyword2
+	hlString
+	hlNumber
+	hlBoolean
+	hlMatch
+)
 
 func enableRawMode() (*unix.Termios, error) {
 	t, err := unix.IoctlGetTermios(stdinfd, ioctlReadTermios)
@@ -94,57 +158,6 @@ func (e *Editor) Close() error {
 	return unix.IoctlSetTermios(stdinfd, ioctlWriteTermios, e.Term)
 }
 
-type key int32
-
-const (
-	keyEnter     key = 10
-	keyBackspace key = 127
-
-	keyArrowLeft key = iota + 1000
-	keyArrowRight
-	keyArrowUp
-	keyArrowDown
-	keyDelete
-	keyPageUp
-	keyPageDown
-	keyHome
-	keyEnd
-)
-
-const (
-	hlNormal uint8 = iota
-	hlComment
-	hlMlComment
-	hlKeyword1
-	hlKeyword2
-	hlString
-	hlNumber
-	hlBoolean
-	hlMatch
-)
-
-type EditorSyntax struct {
-	FileType  string   `json:"filetype"`
-	FileMatch []string `json:"filematch"`
-	Keywords  []string `json:"keywords"`
-	SCS       string   `json:"scs"`
-	MCS       string   `json:"mcs"`
-	MCE       string   `json:"mce"`
-	Flags     struct {
-		HighLightNumbers  bool `json:"highlight_numbers"`
-		HighLightStrings  bool `json:"highlight_strings"`
-		HighLightBooleans bool `json:"highlight_booleans"`
-	} `json:"flags"`
-}
-
-type Row struct {
-	idx                int
-	chars              []rune
-	render             string
-	hl                 []uint8
-	hasUnclosedComment bool
-}
-
 func ctrl(char byte) byte {
 	return char & 0x1f
 }
@@ -186,7 +199,6 @@ func ReadKey() (key, error) {
 				return keyPageUp, nil
 			case bytes.Equal(buf, []byte("\x1b[6~")):
 				return keyPageDown, nil
-
 			default:
 				return key(buf[0]), nil
 			}
@@ -228,8 +240,26 @@ func (e *Editor) MoveCursor(k key) {
 	if e.CY < len(e.Rows) {
 		linelen = len(e.Rows[e.CY].chars)
 	}
+
 	if e.CX > linelen {
 		e.CX = linelen
+	}
+}
+
+func (e *Editor) Paste() {
+	data := clipboard.Read(clipboard.FmtText)
+	dataStr := string(data)
+	if dataStr == "" {
+		return
+	}
+
+	lines := strings.Split(dataStr, "\n")
+	for _, line := range lines {
+		if line != "" {
+			e.InsertRow(e.CY, line)
+			e.CY++
+			e.Dirty += len(line)
+		}
 	}
 }
 
@@ -244,8 +274,7 @@ func (e *Editor) ProcessKey() error {
 
 	case key(ctrl('q')):
 		if e.Dirty > 0 && e.QuitCounter < e.Config.QuitTimes {
-			e.SetStatusMessage(
-				"WARNING!!! File has unsaved changes. Press Ctrl-Q %d more times to quit.", e.Config.QuitTimes-e.QuitCounter)
+			e.SetStatusMessage("\x1b[33;1mWARNING\x1b[0m File has unsaved changes. Press Ctrl-Q %d more times to quit.", e.Config.QuitTimes-e.QuitCounter)
 			e.QuitCounter++
 			return nil
 		}
@@ -285,6 +314,9 @@ func (e *Editor) ProcessKey() error {
 			e.CY--
 			e.CX = len(e.Rows[e.CY].chars)
 		}
+
+	case key(ctrl('v')):
+		e.Paste()
 
 	case keyHome:
 		e.CX = 0
@@ -383,7 +415,6 @@ func (e *Editor) DrawRows(b *strings.Builder) {
 					b.WriteRune(sym)
 					b.WriteString("\x1b[m")
 					if currentColor != -1 {
-
 						b.WriteString(fmt.Sprintf("\x1b[%dm", currentColor))
 					}
 				} else if hl[i] == hlNormal {
@@ -393,10 +424,10 @@ func (e *Editor) DrawRows(b *strings.Builder) {
 					}
 					b.WriteRune(r)
 				} else {
-					color := SyntaxToColor(hl[i])
+					color := e.SyntaxToColor(hl[i])
 					if color != currentColor {
 						currentColor = color
-						b.WriteString(fmt.Sprintf("\x1b[%dm", color))
+						b.WriteString(fmt.Sprintf("\u001b[38;5;%dm", color))
 					}
 					b.WriteRune(r)
 				}
@@ -594,8 +625,7 @@ func (e *Editor) Prompt(prompt string, cb func(query string, k key)) (string, er
 }
 
 func isArrowKey(k key) bool {
-	return k == keyArrowUp || k == keyArrowRight ||
-		k == keyArrowDown || k == keyArrowLeft
+	return k == keyArrowUp || k == keyArrowRight || k == keyArrowDown || k == keyArrowLeft
 }
 
 func (e *Editor) Save() (int, error) {
@@ -612,12 +642,14 @@ func (e *Editor) Save() (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	defer f.Close()
 	n, err := f.WriteString(e.RowsToString())
 	if err != nil {
 		return 0, err
 	}
 	e.Dirty = 0
+
 	return n, nil
 }
 
@@ -863,24 +895,26 @@ func (e *Editor) UpdateHighlight(row *Row) {
 	}
 }
 
-func SyntaxToColor(hl uint8) int {
+func (e *Editor) SyntaxToColor(hl uint8) int {
 	switch hl {
-	case hlComment, hlMlComment:
-		return 90
+	case hlComment:
+		return int(e.Config.ColorPalette.Comment)
+	case hlMlComment:
+		return int(e.Config.ColorPalette.MultiLineComment)
 	case hlKeyword1:
-		return 94
+		return int(e.Config.ColorPalette.Keyword1)
 	case hlKeyword2:
-		return 96
+		return int(e.Config.ColorPalette.Keyword2)
 	case hlString:
-		return 36
+		return int(e.Config.ColorPalette.String)
 	case hlNumber:
-		return 33
+		return int(e.Config.ColorPalette.Number)
 	case hlBoolean:
-		return 35
+		return int(e.Config.ColorPalette.Boolean)
 	case hlMatch:
-		return 32
+		return int(e.Config.ColorPalette.Match)
 	default:
-		return 37
+		return int(e.Config.ColorPalette.Normal)
 	}
 }
 
@@ -930,21 +964,58 @@ func (e *Editor) InsertChar(c rune) {
 	if e.CY == len(e.Rows) {
 		e.InsertRow(len(e.Rows), "")
 	}
+
 	row := e.Rows[e.CY]
 	row.InsertChar(e.CX, c)
 	e.UpdateRow(row)
 	e.CX++
 	e.Dirty++
+
+	switch c {
+	case '{':
+		e.InsertChar('}')
+		e.CX--
+	case '[':
+		e.InsertChar(']')
+		e.CX--
+	case '(':
+		e.InsertChar(')')
+		e.CX--
+	case '\'':
+		if e.CX > 0 && e.Rows[e.CY].chars[e.CX-1] == '\'' && e.CX > 1 && e.Rows[e.CY].chars[e.CX-2] == '\'' {
+			return
+		}
+
+		e.InsertChar('\'')
+		e.CX--
+	case '"':
+		if e.CX > 0 && e.Rows[e.CY].chars[e.CX-1] == '"' && e.CX > 1 && e.Rows[e.CY].chars[e.CX-2] == '"' {
+			return
+		}
+
+		e.InsertChar('"')
+		e.CX--
+	case '`':
+		if e.CX > 0 && e.Rows[e.CY].chars[e.CX-1] == '`' && e.CX > 1 && e.Rows[e.CY].chars[e.CX-2] == '`' {
+			return
+		}
+
+		e.InsertChar('`')
+		e.CX--
+	}
 }
 
 func (e *Editor) DeleteChar() {
 	if e.CY == len(e.Rows) {
 		return
 	}
+
 	if e.CX == 0 && e.CY == 0 {
 		return
 	}
+
 	row := e.Rows[e.CY]
+
 	if e.CX > 0 {
 		row.DeleteChar(e.CX - 1)
 		e.UpdateRow(row)

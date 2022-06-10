@@ -8,17 +8,17 @@ import (
 	"time"
 
 	"github.com/olekukonko/ts"
+	"golang.design/x/clipboard"
 )
 
 const CONFIG_FILE = ".config/cookie/config.json"
 const SYNTAX_FILE = ".config/cookie/syntax.json"
-const COLOR_THEMES_DIR = ".config/cookie/color-themes"
 
 type Config struct {
-	ColorTheme    string `json:"color_theme"`
-	TabStop       int    `json:"tab_stop"`
-	QuitTimes     int    `json:"quit_times"`
-	EmptyLineChar string `json:"empty_line_char"`
+	TabStop       int          `json:"tab_stop"`
+	QuitTimes     int          `json:"quit_times"`
+	EmptyLineChar string       `json:"empty_line_char"`
+	ColorPalette  ColorPalette `json:"color_palette"`
 }
 
 func HandleConfig() (*Config, error) {
@@ -99,6 +99,25 @@ func main() {
 	editor.Config = config
 	editor.Syntaxes = syntax
 
+	go func() {
+		for {
+			config, err := HandleConfig()
+			if err != nil {
+				die(err)
+			}
+
+			syntax, err := HandleSyntax()
+			if err != nil {
+				die(err)
+			}
+
+			editor.Config = config
+			editor.Syntaxes = syntax
+
+			time.Sleep(time.Second * 5)
+		}
+	}()
+
 	if err := editor.Init(); err != nil {
 		die(err)
 	}
@@ -112,6 +131,8 @@ func main() {
 	}
 
 	editor.SetStatusMessage("Help: Ctrl-S = Save | Ctrl-Q = Quit | Ctrl-F = Find | Ctrl-D = Delete Line")
+
+	clipboard.Init()
 
 	go func() {
 		for {

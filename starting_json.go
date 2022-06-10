@@ -4,30 +4,41 @@ const startingConfigJson = `{
 	"color_theme": "default",
 	"tab_stop": 4,
 	"quit_times": 1,
-	"empty_line_char": " "
+	"empty_line_char": "~",
+	"color_palette": {
+		"normal": 15,
+		"comment": 238,
+		"multiline_comment": 238,
+		"keyword1": 105,
+		"keyword2": 141,
+		"string": 14,
+		"number": 147,
+		"boolean": 6,
+		"match": 32
+	}
 }`
 
 const startingSyntaxJson = `[
     {
-		"filetype":  "c",
-		"filematch": [".c", ".h", "cpp", ".cc"],
-		"keywords": [
-			"switch", "if", "while", "for", "break", "continue", "return",
-			"else", "struct", "union", "typedef", "static", "enum", "class",
-			"case",
+        "filetype":  "c",
+        "filematch": [".c", ".h", "cpp", ".cc"],
+        "keywords": [
+            "switch", "if", "while", "for", "break", "continue", "return",
+            "else", "struct", "union", "typedef", "static", "enum", "class",
+            "case",
 
-			"int|", "long|", "double|", "float|", "char|", "unsigned|",
-			"signed|", "void|"
+            "int|", "long|", "double|", "float|", "char|", "unsigned|",
+            "signed|", "void|"
         ],
-		"scs": "//",
-		"mcs": "/*",
-		"mce": "*/",
-		"flags": {
+        "scs": "//",
+        "mcs": "/*",
+        "mce": "*/",
+        "flags": {
             "highlight_numbers": true,
-			"highlight_strings": true,
+            "highlight_strings": true,
             "highlight_booleans": true
         }
-	},
+    },
     {
         "filetype":  "go",
         "filematch": [".go"],
@@ -55,23 +66,24 @@ const startingSyntaxJson = `[
         }
     },
     {
-		"filetype":  "python",
-		"filematch": [".py"],
-		"keywords": [
-			"and", "as", "assert", "break", "class", "continue", "def", "del",
-			"elif", "else", "except", "exec", "finally", "for", "from", "global",
-			"if", "import", "in", "is", "lambda", "not", "or", "pass", "print",
-			"raise", "return", "try", "while", "with", "yield"
+        "filetype":  "python",
+        "filematch": [".py"],
+        "keywords": [
+            "and", "as", "assert", "break", "class", "continue", "def", "del",
+            "elif", "else", "except", "exec", "finally", "for",
+            "if", "in", "is", "lambda", "not", "or", "pass",
+
+            "raise|", "return|", "try|", "while|", "with|", "yield|", "global|", "import|", "from|", "input|", "print|", "eval|"
         ],
-		"scs": "#",
-		"mcs": "#",
-		"mce": "#",
-		"flags": {
+        "scs": "#",
+        "mcs": "#",
+        "mce": "#",
+        "flags": {
             "highlight_numbers": true,
             "highlight_strings": true,
             "highlight_booleans": true
         }
-	},
+    },
     {
         "filetype":  "java",
         "filematch": [".java"],
@@ -82,7 +94,6 @@ const startingSyntaxJson = `[
             "byte", "else", "import", "public", "throws", "case", "enum",
             "instanceof", "return", "transient", "catch", "extends", "int",
             "short", "try", "char", "final", "interface", "static", "void",
-            "class",
             
             "int|", "long|", "double|", "float|", "char|", "unsigned|",
             "signed|", "void|"
@@ -106,7 +117,7 @@ const startingSyntaxJson = `[
             "in", "instanceof", "interface", "let", "new", "null", "package",
             "private", "protected", "public", "return", "static", "super",
             "switch", "this", "throw", "true", "try", "typeof", "var", "void",
-            "while", "with", "yield", "function",
+            "while", "with", "yield",
 
             "int|", "long|", "double|", "float|", "char|", "unsigned|",
             "signed|", "void|"
@@ -130,7 +141,7 @@ const startingSyntaxJson = `[
             "in", "instanceof", "interface", "let", "new", "null", "package",
             "private", "protected", "public", "return", "static", "super",
             "switch", "this", "throw", "true", "try", "typeof", "var", "void",
-            "while", "with", "yield", "fn", "extern", "impl", "let", "loop",
+            "while", "with", "yield",
 
             "int|", "long|", "double|", "float|", "char|", "unsigned|",
             "signed|", "void|"
