@@ -73,7 +73,7 @@ type Row struct {
 	hasUnclosedComment bool
 }
 
-var version = "0.1.3"
+var version = "0.1.4"
 
 var (
 	stdinfd  = int(os.Stdin.Fd())

@@ -22,7 +22,7 @@ $HOME/.config/cookie/
 ## Installation
 
 ```txt
-go install github.com/cookie-for-pres/cookie@v0.1.3
+go install github.com/cookie-for-pres/cookie@v0.1.4
 ```
 
 ## Usage
